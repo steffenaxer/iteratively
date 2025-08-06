@@ -18,6 +18,16 @@ weight = 50
 icon = "section-sign"
 newtab = false
 
+[[main]]
+identifier = "about"
+name = "About"
+url = "/about/"
+weight = 10
+
+[main.params]
+icon = "info-circle"
+newtab = false
+
 
 [[social]]
 identifier = "linkedin"
