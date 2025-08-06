@@ -15,7 +15,7 @@ Whether you're a researcher, practitioner, or simply curious about the future of
 
 # About Me
 
-Hi, I'm **Steffen Axer**, a senior transport modeller, mobility strategist, and an active developer of **MATSim** — a leading open-source framework for simulating transport systems.
+Hi, I'm **Steffen Axer**, a senior transport modeller, mobility strategist, and an active developer of **[MATSim](https://matsim.org/)** — a leading open-source framework for simulating transport systems.
 
 I started my journey with MATSim in **2017**, when I began my career at **Volkswagen Group Research**. Since then, I’ve contributed to its **core development**, enhanced its **functionality**, and advocated for its **real-world application** in solving complex transportation challenges. I’m passionate about pushing the boundaries of how we understand and improve **mobility** in both urban and regional contexts.
 
