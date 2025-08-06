@@ -11,7 +11,7 @@
 [[main]]
 identifier = "imprint"
 name = "Imprint"
-url = "/imprint-access/"
+url = "/imprint/"
 weight = 50
 
 [main.params]
