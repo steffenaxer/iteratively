@@ -22,7 +22,7 @@ Dr. Steffen Axer
 Responsible for content:  
 Dr. Steffen Axer
 
-Regulatory Authority: Not applicable
+Regulatory Authority: [The State Commissioner for Data Protection of Lower Saxony](https://www.lfd.niedersachsen.de)
 
 Online Dispute Resolution: [https://ec.europa.eu/consumers/odr](https://ec.europa.eu/consumers/odr)  
 German laws under § 5 DDG and § 55 RStV.
