@@ -1,3 +1,4 @@
+
 # Configure main menu and social menu
 #[[main]]
 #identifier = "home"
@@ -7,6 +8,17 @@
 #icon = "home"
 #newtab = true
 
+[[main]]
+identifier = "imprint"
+name = "Imprint"
+url = "/imprint-access/"
+weight = 50
+
+[main.params]
+icon = "section-sign"
+newtab = false
+
+
 [[social]]
 identifier = "linkedin"
 name = "LinkedIn"
@@ -14,4 +26,3 @@ url = "https://www.linkedin.com/in/steffenaxer"
 
 [social.params]
 icon = "brand-linkedin"
-

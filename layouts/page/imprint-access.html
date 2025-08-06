@@ -1,0 +1,37 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Access Legal Notice</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding: 2em;
+        }
+        .g-recaptcha {
+            margin: 1em auto;
+        }
+    </style>
+</head>
+<body>
+<h1>Verify to access the Legal Notice</h1>
+<form id="captcha-form" action="javascript:void(0);">
+    <div class="g-recaptcha" data-sitekey="6Lf4cJwrAAAAAMGdMDDa2ihi5bwfU0HoEue6Y4in"></div>
+    <button onclick="grantAccess()">Access</button>
+</form>
+
+<script>
+    function grantAccess() {
+        const response = grecaptcha.getResponse();
+        if (response.length === 0) {
+            alert("Please verify you're human.");
+        } else {
+            window.location.href = "/imprint/";
+        }
+    }
+</script>
+</body>
+</html>
