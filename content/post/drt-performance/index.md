@@ -8,6 +8,7 @@ image: cover.jpg
 #    - Example Category
 tags:
    - Performance
+   - DRT
 weight: 1       # You can add weight to some posts to override the default sorting (date descending)
 ---
 
