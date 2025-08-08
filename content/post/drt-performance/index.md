@@ -1,5 +1,5 @@
 ---
-title: 'Fast & Curious: MATSim’s DRT Speed Boost'
+title: 'Fast & Curious: How to Speed Up DRT Simulations in MATSim'
 description: Massive Speedup for DRT Simulations with Parallel Request Insertion
 slug: drt-speedup
 date: 2025-08-07 00:00:00+0000
