@@ -109,7 +109,7 @@ To enable the `ParallelUnplannedRequestInserter` in your MATSim DRT simulation, 
     controller.run();
     ```
 
-### ⚙️ Configuration Parameters
+### 🔧 Configuration Parameters
 
 <div style="font-size: 0.85em">
 
