@@ -135,7 +135,7 @@ The `ParallelUnplannedRequestInserter` is a powerful enhancement for MATSim’s 
 
 By leveraging **parallel processing** and **dynamic partitioning**, it significantly improves the **economic feasibility of large-scale studies**. Simulations that previously required hours or days can now deliver actionable insights in a fraction of the time. This acceleration not only reduces computational costs but also shortens the time to decision-making — a critical factor in agile urban planning and transport strategy development.
 
-A logical next step is to **combine these optimizations with DISim (Distributed MATSim)**, enabling distributed execution across multiple machines or clusters. This will unlock even greater scalability, allowing researchers and planners to simulate entire regions or countries with high fidelity and responsiveness.
+A logical next step is to **combine these optimizations with DSim (Distributed MATSim)**, enabling distributed execution across multiple machines or clusters. This will unlock even greater scalability, allowing researchers and planners to simulate entire regions or countries with high fidelity and responsiveness.
 
 ---
 
