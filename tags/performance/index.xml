@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Performance on iteratively.io</title><link>https://iteratively.io/tags/performance/</link><description>Recent content in Performance on iteratively.io</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 07 Aug 2025 00:00:00 +0000</lastBuildDate><atom:link href="https://iteratively.io/tags/performance/index.xml" rel="self" type="application/rss+xml"/><item><title>Fast &amp; Curious: How to Speed Up DRT Simulations in MATSim</title><link>https://iteratively.io/p/drt-speedup/</link><pubDate>Thu, 07 Aug 2025 00:00:00 +0000</pubDate><guid>https://iteratively.io/p/drt-speedup/</guid><description>&lt;img src="https://iteratively.io/p/drt-speedup/cover.jpg" alt="Featured image of post Fast &amp; Curious: How to Speed Up DRT Simulations in MATSim" />&lt;h2 id="-motivation">💡 Motivation
+&lt;/h2>&lt;p>During the development of &lt;strong>DSim (Distributed MATSim)&lt;/strong> — as presented at &lt;a class="link" href="https://matsim.org/conferences/mum2025.html" target="_blank" rel="noopener"
+>MUM 2025&lt;/a> — it became evident that &lt;strong>Demand Responsive Transport (DRT)&lt;/strong> systems pose a significant bottleneck in large-scale MATSim simulations. Especially when simulating thousands of autonomous rides, the insertion logic for unplanned requests becomes computationally expensive and limits overall scalability.&lt;/p>
+&lt;p>This is problematic because &lt;strong>fast and scalable DRT simulations&lt;/strong> are crucial for system planning in &lt;strong>Autonomous Driving Mobility-as-a-Service (AD MaaS)&lt;/strong>. As fleets and demand grow, cities and operators need to regularly optimize service configurations. This requires simulation frameworks that can handle high request volumes efficiently.&lt;/p>
+&lt;p>To address this, I developed the &lt;strong>ParallelUnplannedRequestInserter&lt;/strong>, a multi-threaded insertion engine designed to scale with demand and fleet size.&lt;/p>
+&lt;hr>
+&lt;h2 id="-conceptual-design">⚙️ Conceptual Design
+&lt;/h2>&lt;p>The &lt;code>ParallelUnplannedRequestInserter&lt;/code> is a parallelized implementation of MATSim’s &lt;code>UnplannedRequestInserter&lt;/code> interface. It introduces the following key concepts:&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>Partitioning&lt;/strong>: Incoming DRT requests and available vehicle entries are partitioned using &lt;code>RequestsPartitioner&lt;/code> and &lt;code>VehicleEntryPartitioner&lt;/code>.&lt;/li>
+&lt;li>&lt;strong>Worker Threads&lt;/strong>: Each partition is processed by a dedicated &lt;code>RequestInsertWorker&lt;/code>, which performs insertion logic independently.&lt;/li>
+&lt;li>&lt;strong>Conflict Resolution&lt;/strong>: After parallel processing, insertions are consolidated. Conflicts (e.g., multiple requests assigned to the same vehicle) are resolved iteratively.&lt;/li>
+&lt;li>&lt;strong>Thread Activity Logging&lt;/strong>: Optionally logs request density and active partitions over time for performance diagnostics.&lt;/li>
+&lt;/ul>
+&lt;p>This design enables &lt;strong>concurrent evaluation of insertion possibilities&lt;/strong>, significantly reducing simulation time for high-volume DRT scenarios.&lt;/p>
+&lt;h3 id="-partitioning-strategies-explained">🧩 Partitioning Strategies Explained
+&lt;/h3>&lt;p>This simulation uses two interfaced partitioning strategies to improve scalability and responsiveness in high-load DRT scenarios:&lt;/p>
+&lt;h4 id="-request-partitioner">📥 Request-Partitioner
+&lt;/h4>&lt;p>This partitioner (&lt;code>LoadAwareRoundRobinRequestsPartitioner&lt;/code>) distributes incoming DRT requests across multiple partitions using a &lt;strong>load-aware round-robin&lt;/strong> strategy. Unlike a static round-robin, it dynamically adjusts the number of active partitions based on the current request load and a configurable scaling function.&lt;/p>
+&lt;ul>
+&lt;li>For every additional &lt;strong>20 requests per minute&lt;/strong>, one additional partition is activated.&lt;/li>
+&lt;li>Requests are assigned cyclically to active partitions using an internal counter.&lt;/li>
+&lt;li>This ensures efficient use of resources and better parallelization under varying demand levels.&lt;/li>
+&lt;li>&lt;strong>Importantly&lt;/strong>, under &lt;strong>low demand&lt;/strong>, the partitioner avoids unnecessary fragmentation of requests. This helps maintain simulation quality by reducing empty trips and rejection rates, which would otherwise increase due to overly distributed demand.&lt;/li>
+&lt;/ul>
+&lt;h4 id="-vehicle-partitioner">🚗 Vehicle-Partitioner
+&lt;/h4>&lt;p>This partitioner (&lt;code>ShiftingRoundRobinVehicleEntryPartitioner&lt;/code>) assigns vehicles to request partitions using a &lt;strong>shifting round-robin&lt;/strong> strategy:&lt;/p>
+&lt;ul>
+&lt;li>Vehicles are distributed cyclically across active partitions.&lt;/li>
+&lt;li>The starting index shifts with each invocation to avoid systematic bias.&lt;/li>
+&lt;li>Only partitions with at least one request are considered.&lt;/li>
+&lt;li>Vehicles are sorted deterministically by ID to ensure reproducibility.&lt;/li>
+&lt;/ul>
+&lt;p>Together, these strategies ensure that both requests and vehicles are evenly and dynamically distributed across processing threads, improving simulation performance and fairness over time.&lt;/p>
+&lt;hr>
+&lt;h2 id="-benchmark-results">📊 Benchmark Results
+&lt;/h2>&lt;figure>&lt;img src="https://iteratively.io/p/drt-speedup/benchmark.png"
+alt="Simulation Duration Comparison: Baseline vs Optimized" width="600">
+&lt;/figure>
+&lt;p>The chart compares simulation durations for two partitioning strategies across different agent counts:&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>Baseline&lt;/strong> (orange): shows a steep increase in simulation time as the number of agents grows.&lt;/li>
+&lt;li>&lt;strong>Optimized&lt;/strong> (blue): maintains significantly lower durations, scaling more efficiently.&lt;/li>
+&lt;/ul>
+&lt;p>At &lt;strong>100,000 agents&lt;/strong>, the optimized setup is &lt;strong>1.60× faster&lt;/strong> than the baseline.&lt;br>
+At &lt;strong>200,000 agents&lt;/strong>, the speedup increases to &lt;strong>2.60×&lt;/strong>.&lt;br>
+An extrapolation suggests that at &lt;strong>400,000 agents&lt;/strong>, the optimized strategy could be &lt;strong>4.60× faster&lt;/strong>, highlighting its scalability advantage.&lt;/p>
+&lt;p>This benchmark demonstrates how intelligent partitioning can drastically reduce simulation time in large-scale DRT scenarios.&lt;/p>
+&lt;hr>
+&lt;h2 id="-how-to-use">🛠️ How to Use
+&lt;/h2>&lt;p>To enable the &lt;code>ParallelUnplannedRequestInserter&lt;/code> in your MATSim DRT simulation, follow these steps:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>&lt;strong>Add &lt;code>DrtParallelInserterParams&lt;/code>&lt;/strong> to your DRT config:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-java" data-lang="java">&lt;span class="line">&lt;span class="cl">&lt;span class="n">DrtParallelInserterParams&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">params&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">new&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">DrtParallelInserterParams&lt;/span>&lt;span class="p">();&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="n">params&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">setLogThreadActivity&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kc">true&lt;/span>&lt;span class="p">);&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c1">// Optional: enables logging&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="n">drtCfg&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">addParameterSet&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">params&lt;/span>&lt;span class="p">);&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Replace the default inserter module&lt;/strong> with the parallel version:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-java" data-lang="java">&lt;span class="line">&lt;span class="cl">&lt;span class="n">controller&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">addOverridingQSimModule&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">ParallelRequestInserterModule&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">drtCfg&lt;/span>&lt;span class="p">));&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Choose your insertion strategy&lt;/strong>:&lt;/p>
+&lt;ul>
+&lt;li>For &lt;strong>Extensive Search&lt;/strong>:
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-java" data-lang="java">&lt;span class="line">&lt;span class="cl">&lt;span class="n">drtCfg&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">removeParameterSet&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">drtCfg&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">getDrtInsertionSearchParams&lt;/span>&lt;span class="p">());&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="n">drtCfg&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">addParameterSet&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">ExtensiveInsertionSearchParams&lt;/span>&lt;span class="p">());&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;/li>
+&lt;li>For &lt;strong>Repeated Selective Search&lt;/strong>:
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-java" data-lang="java">&lt;span class="line">&lt;span class="cl">&lt;span class="n">drtCfg&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">removeParameterSet&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">drtCfg&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">getDrtInsertionSearchParams&lt;/span>&lt;span class="p">());&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="n">drtCfg&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">addParameterSet&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">RepeatedSelectiveInsertionSearchParams&lt;/span>&lt;span class="p">());&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Run your simulation&lt;/strong> as usual:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-java" data-lang="java">&lt;span class="line">&lt;span class="cl">&lt;span class="n">Controler&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">controller&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">DrtControlerCreator&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">createControler&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">config&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kc">false&lt;/span>&lt;span class="p">);&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="n">controller&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">run&lt;/span>&lt;span class="p">();&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;/li>
+&lt;/ol>
+&lt;h3 id="-configuration-parameters">🔧 Configuration Parameters
+&lt;/h3>&lt;div style="font-size: 0.85em">
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Parameter&lt;/th>
+&lt;th>Description&lt;/th>
+&lt;th>Default&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>collectionPeriod&lt;/code>&lt;/td>
+&lt;td>Time window (in seconds) for collecting incoming requests before processing begins. Larger values increase batching but may delay responsiveness.&lt;/td>
+&lt;td>&lt;code>15.0&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>maxIterations&lt;/code>&lt;/td>
+&lt;td>Maximum number of conflict resolution iterations. Helps resolve cases where multiple partitions assign requests to the same vehicle.&lt;/td>
+&lt;td>&lt;code>2&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>maxPartitions&lt;/code>&lt;/td>
+&lt;td>Maximum number of partitions (i.e., parallel workers). Each partition processes a subset of requests and vehicles.&lt;/td>
+&lt;td>&lt;code>4&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>insertionSearchThreadsPerWorker&lt;/code>&lt;/td>
+&lt;td>Number of threads allocated per worker for performing insertion searches.&lt;/td>
+&lt;td>&lt;code>4&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>logThreadActivity&lt;/code>&lt;/td>
+&lt;td>Enables logging of thread activity and request density. Useful for diagnostics and benchmarking.&lt;/td>
+&lt;td>&lt;code>false&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>vehiclesPartitioner&lt;/code>&lt;/td>
+&lt;td>Strategy for partitioning vehicles across workers. Options:&lt;/td>
+&lt;td>&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;/div>
+&lt;p>These parameters allow you to balance performance, parallelism, and conflict resolution quality depending on your scenario scale and hardware capabilities.&lt;/p>
+&lt;p>For a complete example, refer to the &lt;a class="link" href="https://github.com/matsim-org/matsim-libs/blob/main/contribs/drt/src/test/java/org/matsim/contrib/drt/run/examples/RunDrtExampleIT.java#L88" target="_blank" rel="noopener"
+>&lt;code>RunDrtExampleIT.java&lt;/code>&lt;/a> integration test, which demonstrates various configurations.&lt;/p>
+&lt;h2 id="-conclusion">🧠 Conclusion
+&lt;/h2>&lt;p>The &lt;code>ParallelUnplannedRequestInserter&lt;/code> is a powerful enhancement for MATSim’s DRT module, enabling &lt;strong>scalable, high-performance simulations&lt;/strong> that are essential for future mobility planning. Whether you&amp;rsquo;re simulating autonomous fleets or optimizing MaaS strategies, this tool ensures that your simulations remain &lt;strong>fast, reliable, and adaptable&lt;/strong> — even at large scale.&lt;/p>
+&lt;p>By leveraging &lt;strong>parallel processing&lt;/strong> and &lt;strong>dynamic partitioning&lt;/strong>, it significantly improves the &lt;strong>economic feasibility of large-scale studies&lt;/strong>. Simulations that previously required hours or days can now deliver actionable insights in a fraction of the time. This acceleration not only reduces computational costs but also shortens the time to decision-making — a critical factor in agile urban planning and transport strategy development.&lt;/p>
+&lt;p>A logical next step is to &lt;strong>combine these optimizations with DSim (Distributed MATSim)&lt;/strong>, enabling distributed execution across multiple machines or clusters. This will unlock even greater scalability, allowing researchers and planners to simulate entire regions or countries with high fidelity and responsiveness.&lt;/p>
+&lt;hr>
+&lt;div align="center">Stay tuned for the next iteration &lt;img src="https://iteratively.io/logo_iteratively_circle.svg" style="height:1.5em;position:relative;top:0.4em;padding-left:0.2em"> &lt;/div>
+&lt;p>&lt;em>Author: Steffen Axer&lt;/em>&lt;/p></description></item></channel></rss>
