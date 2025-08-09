@@ -3,6 +3,7 @@ title: "About"
 date: 2024-04-01
 draft: false
 comments: false
+hidden: true
 ---
 
 # About This Blog
