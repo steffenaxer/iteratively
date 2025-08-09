@@ -139,7 +139,7 @@ By leveraging **parallel processing** and **dynamic partitioning**, it significa
 A logical next step is to **combine these optimizations with DSim (Distributed MATSim)**, enabling distributed execution across multiple machines or clusters. This will unlock even greater scalability, allowing researchers and planners to simulate entire regions or countries with high fidelity and responsiveness.
 
 ---
-<div align="center">Stay tuned for the next iteration 🔁</div>
+<div align="center">Stay tuned for the next iteration <img src="/logo_iteratively_circle.svg" style="height:1.5em;position:relative;top:0.4em;padding-left:0.2em"> </div>
 
 *Author: Steffen Axer*
 

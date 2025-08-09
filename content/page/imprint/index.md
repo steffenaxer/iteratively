@@ -3,6 +3,7 @@ title: "Imprint"
 date: 2024-04-01
 draft: false
 comments: false
+hidden: true
 ---
 
 ## Legal Notice
