@@ -174,7 +174,7 @@ But that’s not the whole story. The **utilization of the fleet** is highly une
 
 This **utilization risk** poses a serious economic challenge for autonomous operators like Waymo, Uber, or Lyft. Previously, this risk was absorbed by human drivers — now it shifts to the companies themselves.
 
-It’s likely that these providers will aim for a **hybrid operational model**, where a human fleet handles baseline demand and the autonomous fleet is deployed **only during high-utilization periods**. This would help mitigate the risk of underused assets and ensure a more sustainable business case.
+It’s likely that these providers will aim for a **hybrid operational model**, where an autonomous fleet handles baseline demand and the human driven fleet is request **only during high-utilization periods**. This would help mitigate the risk of underused assets and ensure a more sustainable business case.
 
 ## 🔋 Battery Sizing & Daily Mileage: A Classic Question
 
