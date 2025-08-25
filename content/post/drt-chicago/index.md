@@ -34,9 +34,9 @@ You can access the data in two ways:
 - **API Access**: Ideal for downloading specific days or weeks without handling the full dataset.
 
 You can get a full overview of the provided attributes per trip check out this [source](https://data.cityofchicago.org/Transportation/Transportation-Network-Providers-Trips-2025-/6dvr-xwnh/about_data).
-The so call [PlansConverter](https://github.com/steffenaxer/iteratively-code-examples/blob/main/src/main/java/io/iteratively/matsim/PlansConverter.java) allows you to download and cache files day by day.
+The so call [PlansConverter](https://github.com/steffenaxer/iteratively-code-examples/blob/main/src/main/java/chicago/PlansConverter.java) allows you to download and cache files day by day.
 Moreover, trip demand gets transformed to MATSim compatible input.
-> ⚠️ Working on 12.5 GB csv can be a significant hurdle. That’s why I’ve created a [PlansConverter](https://github.com/steffenaxer/iteratively-code-examples/blob/main/src/main/java/io/iteratively/matsim/PlansConverter.java) that lets you fetch data for selected days or entire weeks with ease.
+> ⚠️ Working on 12.5 GB csv can be a significant hurdle. That’s why I’ve created a [PlansConverter](https://github.com/steffenaxer/iteratively-code-examples/blob/main/src/main/java/chicago/PlansConverter.java) that lets you fetch data for selected days or entire weeks with ease.
 > You need to [register](https://data.cityofchicago.org/login) in order to obtain an API token for my downloader.
 
 
@@ -160,7 +160,7 @@ This is the master class that ties everything together. It sets up directories, 
 - Outputs a ready-to-run MATSim scenario with real-world demand
 
 With this setup, you can simulate how an autonomous fleet like Waymo might perform in Chicago — using actual demand data, realistic routing, and configurable fleet behavior.
-Want to try it yourself? Try out the full [code](https://github.com/steffenaxer/iteratively-code-examples/tree/main/src/main/java/io/iteratively/matsim) - If you need help. Feel free to reach out.
+Want to try it yourself? Try out the full [code](https://github.com/steffenaxer/iteratively-code-examples/tree/main/src/main/java/chicago) - If you need help. Feel free to reach out.
 
 ---
 ## 📈 Results: How Many Vehicles Would Waymo Need?
