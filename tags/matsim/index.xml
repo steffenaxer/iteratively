@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>MATSim on iteratively.io</title><link>https://iteratively.io/tags/matsim/</link><description>Recent content in MATSim on iteratively.io</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Sun, 28 Sep 2025 00:00:00 +0000</lastBuildDate><atom:link href="https://iteratively.io/tags/matsim/index.xml" rel="self" type="application/rss+xml"/><item><title>Ride-Pooling - The Right System for Autonomous Services</title><link>https://iteratively.io/p/ride-pooling-chicago/</link><pubDate>Sun, 28 Sep 2025 00:00:00 +0000</pubDate><guid>https://iteratively.io/p/ride-pooling-chicago/</guid><description>&lt;img src="https://iteratively.io/p/ride-pooling-chicago/cover.jpg" alt="Featured image of post Ride-Pooling - The Right System for Autonomous Services" /&gt;&lt;h2 id="-motivation"&gt;🚀 Motivation
+&lt;/h2&gt;&lt;p&gt;In our previous post, we explored how &lt;strong&gt;MATSim can simulate ride-hailing services&lt;/strong&gt; using real-world data from Chicago’s TNP dataset. But ride-hailing is just one piece of the puzzle. What happens when we now transition the focus to &lt;strong&gt;ride-pooling&lt;/strong&gt;, where multiple passengers share a vehicle?&lt;/p&gt;
+&lt;p&gt;Ride-pooling-based DRT systems bring a set of &lt;strong&gt;unique advantages&lt;/strong&gt; that are often overlooked — especially in discussions around autonomous driving. While autonomy promises to revolutionize mobility, it’s equally important to rethink the &lt;strong&gt;operational models&lt;/strong&gt; that go hand-in-hand with it. Choosing a service form that balances &lt;strong&gt;directness&lt;/strong&gt; (as in taxis or private cars) with the ability to &lt;strong&gt;aggregate demand&lt;/strong&gt; is key to building sustainable transport systems.&lt;/p&gt;
+&lt;p&gt;Traditional public transport excels in dense urban cores, where fixed routes and high frequencies make it efficient. However, in everyday life — especially for &lt;strong&gt;tangential trips in suburban areas&lt;/strong&gt; or &lt;strong&gt;inter-village travel&lt;/strong&gt; — conventional transit often falls short by design. It’s simply not optimized for these kinds of trips.&lt;/p&gt;
+&lt;p&gt;This article aims to serve as a &lt;strong&gt;starting point for anyone interested in simulating and evaluating ride-pooling systems in MATSim&lt;/strong&gt;. At the same time, it’s a reminder of the &lt;strong&gt;transformative potential&lt;/strong&gt; of ride-pooling: a mode that can dynamically adapt to demand, reduce fleet sizes, and bundle vehicle kilometers — all while offering a user experience that remains competitive with private car travel.&lt;/p&gt;
+&lt;h3 id="-what-is-ride-pooling"&gt;🧭 What is Ride-Pooling?
+&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;Ride-pooling&lt;/strong&gt; refers to a mobility service where &lt;strong&gt;multiple passengers with similar routes share a single vehicle&lt;/strong&gt;. Unlike traditional ride-hailing, which serves one passenger or group per trip, ride-pooling dynamically matches riders in real time to optimize vehicle occupancy and reduce redundant trips.
+Ride-pooling is often seen as a bridge between private ride-hailing and public transit — offering flexibility while improving efficiency.
+While ride-pooling promises significant benefits — such as &lt;strong&gt;reduced traffic&lt;/strong&gt;, &lt;strong&gt;lower emissions&lt;/strong&gt;, and &lt;strong&gt;better vehicle utilization&lt;/strong&gt; — it also introduces new layers of complexity:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;How do we match passengers efficiently in real time?&lt;/li&gt;
+&lt;li&gt;How much detour is acceptable before user satisfaction drops?&lt;/li&gt;
+&lt;li&gt;How does pooling affect fleet size and total vehicle kilometers traveled (VKT)?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;These questions are not just technical — they have direct implications for &lt;strong&gt;operational cost structures&lt;/strong&gt;. For instance, pooling may reduce the number of trips but increase the duration and routing complexity of each ride. Conversely, ride-hailing may be simpler to operate but less efficient in terms of vehicle usage.&lt;/p&gt;
+&lt;p&gt;This post builds on the previous ride-hailing setup and demonstrates how a &lt;strong&gt;ride-pooling simulation&lt;/strong&gt; can be implemented in MATSim. We provide &lt;a class="link" href="https://github.com/steffenaxer/iteratively-code-examples/tree/main/src/main/java/chicago" target="_blank" rel="noopener"
+&gt;example code&lt;/a&gt;, discuss key parameters, and share insights from a representative scenario in Chicago.&lt;/p&gt;
+&lt;h2 id="-setup-defining-a-ride-pooling-service-in-matsim"&gt;🧩 Setup: Defining a Ride-Pooling Service in MATSim
+&lt;/h2&gt;&lt;p&gt;In our experience, the major core elements of a ride-pooling service definition are:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;The stop network (PuDo locations)&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The detour-determining constraints&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The rebalancing parametrization&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;The vehicle and fleet size&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="-generating-pick-up-and-drop-off-locations"&gt;🛠️ Generating Pick-Up and Drop-Off Locations
+&lt;/h3&gt;&lt;p&gt;A critical component of comfortable ride-pooling simulations in MATSim is the creation of a &lt;strong&gt;pick-up and drop-off (PuDo) locations&lt;/strong&gt;. The objective is to ensure that &lt;strong&gt;no passenger needs to walk farther than a configurable maximum distance&lt;/strong&gt; to reach a stop. The following approach outlines how such a network is systematically generated.&lt;/p&gt;
+&lt;p&gt;The process begins by scanning all links in the MATSim network that support the &lt;code&gt;&amp;quot;car&amp;quot;&lt;/code&gt; mode. For each eligible link, the generator calculates the number of stops required based on the link’s length and a configurable parameter called &lt;code&gt;maxWalkDistance&lt;/code&gt;. These stops are then placed at &lt;strong&gt;evenly spaced intervals&lt;/strong&gt; along the link geometry, using &lt;strong&gt;linear interpolation&lt;/strong&gt; between the coordinates of the link’s nodes. This ensures that stop density reflects the physical layout of the road network and provides &lt;strong&gt;equidistant access&lt;/strong&gt; for passengers.&lt;/p&gt;
+&lt;p&gt;To avoid redundant coverage, a &lt;strong&gt;spatial deduplication step&lt;/strong&gt; is performed using a &lt;strong&gt;QuadTree&lt;/strong&gt; data structure. All initially generated stops are inserted into the tree, and any new stop that falls within &lt;code&gt;maxWalkDistance&lt;/code&gt; of an existing one is discarded. This guarantees &lt;strong&gt;spatial uniqueness&lt;/strong&gt; while maintaining the goal of &lt;strong&gt;universal accessibility&lt;/strong&gt; within walking distance.&lt;/p&gt;
+&lt;p&gt;Finally, the filtered set of stops is converted into &lt;code&gt;TransitStopFacility&lt;/code&gt; objects, each retaining its associated link ID and coordinates. The resulting stop network is exported as a MATSim transit schedule and can be directly integrated into &lt;strong&gt;Demand Responsive Transport (DRT) simulations&lt;/strong&gt;, enabling realistic modeling of ride-pooling systems.&lt;/p&gt;
+&lt;figure&gt;&lt;img src="https://iteratively.io/p/ride-pooling-chicago/stops_network.png"
+alt="Stop network for PickUp and DropOff points" width="700"&gt;
+&lt;/figure&gt;
+&lt;blockquote&gt;
+&lt;p&gt;📁 The code can be found and tested in the &lt;a class="link" href="https://github.com/steffenaxer/iteratively-code-examples/tree/main/src/main/java/chicago" target="_blank" rel="noopener"
+&gt;example repository&lt;/a&gt; . The result is a well-structured, spatially balanced stop network that builds the foundation of our ride-pooling analysis.&lt;/p&gt;&lt;/blockquote&gt;
+&lt;h3 id="-configuring-ride-pooling-parameters"&gt;⚙️ Configuring Ride-Pooling Parameters
+&lt;/h3&gt;&lt;p&gt;When setting up a ride-pooling service in MATSim, a wide range of parameters define how flexible, efficient, and user-friendly the system behaves. These parameters influence travel time, waiting time, and detour tolerance — all of which directly affect both passenger satisfaction and operational performance.&lt;/p&gt;
+&lt;p&gt;Since around 2017/18 and the first ride-pooling implementation by &lt;a class="link" href="https://www.sciencedirect.com/science/article/pii/S1877050918304290" target="_blank" rel="noopener"
+&gt;Joschka Bischoff et al.&lt;/a&gt;, intensive development efforts — especially by contributors from &lt;a class="link" href="https://www.moia.io/en/passengers" target="_blank" rel="noopener"
+&gt;MOIA&lt;/a&gt;, &lt;a class="link" href="http://volkswagen.com/" target="_blank" rel="noopener"
+&gt;Volkswagen&lt;/a&gt;, and &lt;a class="link" href="https://www.irt-systemx.fr/en/" target="_blank" rel="noopener"
+&gt;IRT SystemX&lt;/a&gt; — have led to a highly functional and robust DRT code base. The resulting implementation meets even the demanding requirements of industrial-scale applications, making MATSim one of the most versatile platforms for simulating demand-responsive transport systems.&lt;/p&gt;
+&lt;p&gt;While the following list of configuration options is far from exhaustive, it offers a first glimpse into the &lt;strong&gt;level of detail and realism&lt;/strong&gt; with which DRT systems can be modeled in MATSim. From routing strategies and vehicle assignment logic to dynamic rebalancing and user-centric constraints — the simulation framework provides fine-grained control over nearly every aspect of ride-pooling operations.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;MaxTravelTimeAlpha&lt;/strong&gt;&lt;br&gt;
+This parameter defines how much longer a pooled ride may take compared to a direct trip. It acts as a multiplier on the shortest possible travel time. A higher value allows for more detour flexibility, enabling better pooling but potentially increasing passenger travel time.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;MaxTravelTimeBeta&lt;/strong&gt;&lt;br&gt;
+This is an additive buffer that complements the alpha factor. It allows for a fixed amount of extra time on top of the proportional detour. Together, Alpha and Beta define the upper bound of acceptable travel time for pooled passengers.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;MaxWaitTime&lt;/strong&gt;&lt;br&gt;
+This sets the maximum time a passenger is willing to wait for pickup after requesting a ride. It directly affects responsiveness and perceived service quality. Shorter wait times improve user experience but may reduce pooling efficiency.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;MaxAbsoluteDetour&lt;/strong&gt;&lt;br&gt;
+This optional parameter defines a hard limit on the detour — either in time or distance — regardless of Alpha and Beta. It ensures that no passenger is excessively delayed due to pooling, acting as a safeguard for service reliability.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In this blogpost our team chose the following parameter combination to compare Ride Hailing and Ride Pooling&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Parameter&lt;/th&gt;
+&lt;th&gt;Ride Hailing&lt;/th&gt;
+&lt;th&gt;Ride Pooling&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;MaxTravelTimeAlpha&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;1.0&lt;/td&gt;
+&lt;td&gt;1.5&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;MaxTravelTimeBeta&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;900 sec&lt;/td&gt;
+&lt;td&gt;900 sec&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;MaxWaitTime&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;900 sec&lt;/td&gt;
+&lt;td&gt;900 sec&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;MaxAbsoluteDetour&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;900 sec&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;OperationalScheme&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;door to door&lt;/td&gt;
+&lt;td&gt;stop based&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;PuDo Raster&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;250 meters&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2 id="-comparing-ride-hailing-and-ride-pooling"&gt;📊 Comparing Ride-Hailing and Ride-Pooling
+&lt;/h2&gt;&lt;h3 id="-fleet-requirements"&gt;🚗 Fleet Requirements
+&lt;/h3&gt;&lt;p&gt;To assess the operational efficiency of ride-pooling, we conducted two MATSim simulations — one modeling a ride-hailing service and the other a ride-pooling service. Both scenarios were designed to serve &lt;strong&gt;exactly the same demand&lt;/strong&gt;, as outlined in our previous post on DRT in Chicago.&lt;/p&gt;
+&lt;p&gt;In order to maintain a consistent service level, the target rejection rate was set to approximately &lt;strong&gt;10%&lt;/strong&gt; in both simulations. Fleet sizes were then calibrated accordingly to meet this benchmark.&lt;/p&gt;
+&lt;p&gt;In the &lt;strong&gt;ride-hailing&lt;/strong&gt; scenario, approximately &lt;strong&gt;3500 vehicles&lt;/strong&gt; were required to fulfill all requests. In contrast, the &lt;strong&gt;ride-pooling&lt;/strong&gt; scenario achieved the same level of service with only &lt;strong&gt;2350 vehicles&lt;/strong&gt;. This represents a &lt;strong&gt;reduction of about 32.9%&lt;/strong&gt; in fleet size, clearly demonstrating the potential of ride-pooling to improve vehicle utilization and reduce operational overhead.&lt;/p&gt;
+&lt;p&gt;The following figure illustrates the differences in fleet usage between the two scenarios:&lt;/p&gt;
+&lt;figure&gt;&lt;img src="https://iteratively.io/p/ride-pooling-chicago/occupancy_stackplot_faceted.png"
+alt="Fleet usage Ride Pooling vs. Ride Hailing" width="700"&gt;
+&lt;/figure&gt;
+&lt;blockquote&gt;
+&lt;p&gt;⚠️ Note: In both simulations, each trip was modeled without additional passengers. Technically, MATSim supports multiple passengers per vehicle via &lt;strong&gt;DRT Companions&lt;/strong&gt;, but due to the lack of concrete distribution data, our simulation assumed a consistent passenger-per-trip ratio across both systems.&lt;/p&gt;&lt;/blockquote&gt;
+&lt;h3 id="-mileage-metrics"&gt;📊 Mileage metrics
+&lt;/h3&gt;&lt;p&gt;We focused on five core metrics that describe how the fleet moves through the network:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Total Distance&lt;/strong&gt;: Overall kilometers driven by the fleet.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Empty Distance&lt;/strong&gt;: Kilometers driven without passengers.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Passenger Distance&lt;/strong&gt;: Kilometers driven with passengers onboard.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Empty Ratio&lt;/strong&gt;: Share of empty distance relative to total distance.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Average Driven Distance&lt;/strong&gt;: Mean distance per vehicle.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;These metrics were compared between RP and RH in the final iteration of the simulation. &lt;br&gt;
+&lt;figure&gt;&lt;img src="https://iteratively.io/p/ride-pooling-chicago/relative_comparison_rp_vs_rh.png"
+alt="Relative distance comparison" width="700"&gt;
+&lt;/figure&gt;
+&lt;/p&gt;
+&lt;p&gt;Ride Pooling demonstrates clear advantages over traditional Ride Hailing in terms of efficiency and vehicle utilization. The &lt;strong&gt;total distance driven&lt;/strong&gt; by the RP fleet decreased by &lt;strong&gt;18.91%&lt;/strong&gt;, indicating that fewer kilometers were needed to serve demand—likely due to more optimized routing or a leaner fleet.&lt;/p&gt;
+&lt;p&gt;A particularly striking improvement is the &lt;strong&gt;36.62% reduction in empty distance&lt;/strong&gt;, showing that Ride Pooling significantly minimizes deadheading. This means vehicles spend much less time driving without passengers, which translates to lower operational costs and reduced traffic impact. This aspect is especially relevant for &lt;strong&gt;automated mobility services&lt;/strong&gt;, where—unlike in gig-based models like Uber—the &lt;strong&gt;operator&lt;/strong&gt; of the vehicle directly bears the cost of empty trips. In human-driven ride hailing, deadheading is often absorbed by the driver as part of their flexible work model. However, in autonomous fleets, every kilometer driven without a passenger becomes a direct financial burden for the operating company.&lt;/p&gt;
+&lt;p&gt;This shift in cost responsibility could become a &lt;strong&gt;strategic incentive for mobility providers&lt;/strong&gt; to transition toward pooling-based services. Especially in markets like the &lt;strong&gt;United States&lt;/strong&gt;, where ride hailing is deeply embedded in urban mobility, operators may increasingly seek to &lt;strong&gt;encourage pooled rides&lt;/strong&gt;—potentially through &lt;strong&gt;more attractive pricing models&lt;/strong&gt;—to reduce inefficiencies and improve fleet economics.&lt;/p&gt;
+&lt;p&gt;At the same time, RP vehicles covered &lt;strong&gt;26.12% more kilometers with passengers onboard&lt;/strong&gt;, suggesting either higher demand or better service coverage. The &lt;strong&gt;empty ratio&lt;/strong&gt; also dropped by &lt;strong&gt;22.73%&lt;/strong&gt;, confirming that a larger share of vehicle movement is now productive, with passengers on board.&lt;/p&gt;
+&lt;p&gt;However, this efficiency comes with a trade-off: the &lt;strong&gt;average distance driven per vehicle&lt;/strong&gt; increased by &lt;strong&gt;20.78%&lt;/strong&gt;. Each vehicle now travels significantly more kilometers per day, which could imply longer shifts, larger service areas, or fewer vehicle rotations—factors that may affect &lt;strong&gt;maintenance cycles, energy consumption, and operational planning&lt;/strong&gt;, especially in autonomous or electric fleets.&lt;/p&gt;
+&lt;figure&gt;&lt;img src="https://iteratively.io/p/ride-pooling-chicago/daily_distance_comparison.png"
+alt="Daily vehicle distance" width="700"&gt;
+&lt;/figure&gt;
+&lt;h3 id="-strategic-implications-for-operators"&gt;🧠 Strategic Implications for Operators
+&lt;/h3&gt;&lt;p&gt;Based on the previously calculated daily mileage—&lt;strong&gt;480 km for Ride Pooling (RP)&lt;/strong&gt; and &lt;strong&gt;380 km for Ride Hailing (RH)&lt;/strong&gt;—the following &lt;strong&gt;first rough strategic assessments&lt;/strong&gt; can be made regarding fleet planning and cost structures for mobility operators.&lt;/p&gt;
+&lt;p&gt;While RP vehicles reach their planned lifetime of 300,000 km roughly &lt;strong&gt;164 days sooner&lt;/strong&gt; due to higher daily usage, this is offset by the fact that &lt;strong&gt;RP systems require approximately 30% fewer vehicles&lt;/strong&gt; to serve the same demand. This fundamental difference leads to several important strategic implications:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Lower initial investment&lt;/strong&gt;: The reduced fleet size in RP systems results in significantly lower upfront capital expenditures.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Better utilization&lt;/strong&gt;: RP vehicles spend considerably less time driving without passengers (−36.62% empty distance), which improves operational efficiency and reduces costs.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Reduced traffic impact&lt;/strong&gt;: More passenger kilometers are delivered with fewer vehicles on the road, contributing to less congestion and lower emissions.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Strategic fit for automation&lt;/strong&gt;: In autonomous fleets, deadheading becomes a direct cost to the operator—not the driver. RP’s ability to minimize empty trips is therefore economically critical.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Optimized replacement cycles&lt;/strong&gt;: Although RP vehicles wear out faster due to higher daily mileage, the smaller fleet size leads to &lt;strong&gt;lower annual replacement costs&lt;/strong&gt; compared to RH.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="-user-perspective"&gt;🙋‍♂️ User Perspective
+&lt;/h3&gt;&lt;p&gt;Building on the operator-focused analysis, we now transition to the &lt;strong&gt;user perspective&lt;/strong&gt;, which is equally crucial when evaluating the viability of Ride Pooling (RP) systems. The simulation results reveal that passengers in RP spend, on average, &lt;strong&gt;336 seconds (about 5.6 minutes) longer&lt;/strong&gt; in the vehicle compared to traditional Ride Hailing (RH). In relative terms, this corresponds to a &lt;strong&gt;41.47% increase&lt;/strong&gt; in travel time.&lt;/p&gt;
+&lt;p&gt;This extended in-vehicle time is a natural consequence of pooling, where multiple passengers with similar destinations are grouped into shared trips. While this may seem like a drawback at first glance, it opens up several user-centric advantages. The most obvious is &lt;strong&gt;lower cost per ride&lt;/strong&gt;, as the operational expenses are distributed across more passengers. Additionally, pooling enables &lt;strong&gt;higher service availability&lt;/strong&gt;, particularly during off-peak hours or in areas with lower demand density. It can also lead to &lt;strong&gt;shorter wait times&lt;/strong&gt;, since the fleet is utilized more efficiently and vehicles are more likely to be nearby.&lt;/p&gt;
+&lt;figure&gt;&lt;img src="https://iteratively.io/p/ride-pooling-chicago/inVehicleTravelTime_comparison.png"
+alt="In vehicle travel time comparison" width="700"&gt;
+&lt;/figure&gt;
+&lt;p&gt;Despite the longer travel times, many users may find RP to be a compelling alternative—especially if the service is priced attractively and offers a reliable, comfortable experience. This highlights a key insight: &lt;strong&gt;user acceptance is critical&lt;/strong&gt;. If passengers are willing to trade a few extra minutes for better prices and broader coverage, pooling can become a cornerstone of future urban mobility.&lt;/p&gt;
+&lt;p&gt;Operators can actively support this shift by ensuring transparent communication about expected travel times, offering competitive pricing models, and investing in vehicle comfort and routing reliability. These elements help build trust and make the service more appealing, even if the journey takes slightly longer.&lt;/p&gt;
+&lt;p&gt;Ultimately, this perspective reinforces the strategic value of &lt;strong&gt;agent-based mobility simulation with MATSim&lt;/strong&gt;. It allows operators not only to optimize fleet operations and cost structures but also to evaluate and anticipate user experience—an essential factor in the success of any mobility service. By simulating real-world behavior and system dynamics, MATSim empowers decision-makers to balance efficiency, cost, and satisfaction in a data-driven way—&lt;strong&gt;before a single vehicle hits the road&lt;/strong&gt;.&lt;/p&gt;
+&lt;div align="center"&gt;Stay tuned for the next iteration &lt;img src="https://iteratively.io/logo_iteratively_circle.svg" style="height:1.5em;position:relative;top:0.4em;padding-left:0.2em"&gt; &lt;/div&gt;
+&lt;p&gt;&lt;em&gt;Author: Steffen Axer&lt;/em&gt;&lt;/p&gt;</description></item></channel></rss>
