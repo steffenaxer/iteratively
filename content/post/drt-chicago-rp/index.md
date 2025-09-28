@@ -57,7 +57,7 @@ Finally, the filtered set of stops is converted into `TransitStopFacility` objec
 {{< figure src="stops_network.png" alt="Stop network for PickUp and DropOff points" width="700" >}}
 
 
-> 📁 The code can be found and tested in the example repository. The result is a well-structured, spatially balanced stop network that builds the foundation of our ride-pooling analysis.
+> 📁 The code can be found and tested in the [example repository](https://github.com/steffenaxer/iteratively-code-examples/tree/main/src/main/java/chicago) . The result is a well-structured, spatially balanced stop network that builds the foundation of our ride-pooling analysis.
 
 ### ⚙️ Configuring Ride-Pooling Parameters
 
